@@ -1,65 +1,72 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import path from "path";
 import * as vscode from "vscode";
 
 /**
  * Recursively find the path of the nearest node module directory
  * @param path
  */
-const findModulePath = (sassPath: string): Promise<vscode.Uri> => {
-  return new Promise((resolve, reject) => {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      reject("Path not found");
-      return;
-    }
+const findModulePath = async (sassPath: string): Promise<vscode.Uri | null> => {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!workspaceFolder) {
+    return null;
+  }
 
-    const paths = vscode.workspace.findFiles(
-      path.join("node_modules", sassPath),
-      null,
-      1
-    );
+  const pathList = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(
+      workspaceFolder,
+      "node_modules/" + sassPath + ".{css,scss}"
+    ),
+    null,
+    1
+  );
 
-    return paths.then((pathList) => {
-      if (pathList.length === 0) {
-        reject("Path not found");
-      } else {
-        resolve(pathList[0]);
-      }
-    });
-  });
+  return pathList.length === 0 ? null : pathList[0];
 };
 
-class SassNodeDefinitionProvider implements vscode.DefinitionProvider {
-  public provideDefinition(
+class SassNodeLinkProvider implements vscode.DocumentLinkProvider {
+  async provideDocumentLinks(
     document: vscode.TextDocument,
-    position: vscode.Position,
     token: vscode.CancellationToken
-  ): Thenable<vscode.Location> {
-    console.log("Something happened...?");
+  ): Promise<vscode.DocumentLink[] | null | undefined> {
+    const links: vscode.DocumentLink[] = [];
 
-    const importPattern = /["']~(.*?)["']/i;
-    const lineText = document.lineAt(position.line).text;
+    const importPattern = /["'](~(.*?)(\.scss)?)["']/g;
+    const documentText = document.getText();
+    let match;
 
-    const match = importPattern.exec(lineText);
+    while ((match = importPattern.exec(documentText))) {
+      const importPath = match[2];
+      const fullText = match[1];
+
+      const foundPath = await findModulePath(importPath);
+
+      if (foundPath) {
+        // This path exists, add document link
+
+        const startRange = match.index + 1;
+        const endRange = startRange + fullText.length;
+
+        const range = new vscode.Range(
+          document.positionAt(startRange),
+          document.positionAt(endRange)
+        );
+
+        const docLink = new vscode.DocumentLink(range, foundPath);
+
+        links.push(docLink);
+      }
+    }
 
     return new Promise((resolve, reject) => {
-      if (match) {
-        const sassPath = match[1];
-        findModulePath(sassPath)
-          .then((moduleFilePath) => {
-            const definitionLocation = new vscode.Location(
-              vscode.Uri.file(moduleFilePath.fsPath),
-              new vscode.Position(0, 0)
-            );
-            resolve(definitionLocation);
-          })
-          .catch(reject);
-      } else {
-        reject("Path not found");
-      }
+      resolve(links);
     });
+  }
+  resolveDocumentLink?(
+    link: vscode.DocumentLink,
+    _: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.DocumentLink> {
+    return link;
   }
 }
 
@@ -68,9 +75,9 @@ class SassNodeDefinitionProvider implements vscode.DefinitionProvider {
 export function activate(context: vscode.ExtensionContext) {
   console.log("Started extension");
   context.subscriptions.push(
-    vscode.languages.registerDefinitionProvider(
-      { language: "scss", pattern: "**/*.scss" },
-      new SassNodeDefinitionProvider()
+    vscode.languages.registerDocumentLinkProvider(
+      { language: "scss", pattern: "**/*.scss", scheme: "file" },
+      new SassNodeLinkProvider()
     )
   );
 }
