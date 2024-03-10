@@ -2,9 +2,16 @@
   "name": "sass-node-imports",
   "displayName": "Sass Node Imports",
   "description": "Create links to node modules using the tilde (~) operator in sass files",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.87.0"
+  },
+  "author": {
+    "name": "Auwais Hussain",
+    "url": "https://github.com/hussa15033/"
+  },
+  "repository": {
+    "url": "https://github.com/Hussa15033/sass-node-imports"
   },
   "categories": [
     "Other"
