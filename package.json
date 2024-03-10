@@ -9,19 +9,8 @@
   "categories": [
     "Other"
   ],
-  "capabilities": {
-    "definitionProvider": true
-  },
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "sass-node-imports.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
