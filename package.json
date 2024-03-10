@@ -9,7 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": ["onLanguage:scss"],
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -58,7 +58,7 @@ class SassNodeLinkProvider implements vscode.DocumentLinkProvider {
       }
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _) => {
       resolve(links);
     });
   }
